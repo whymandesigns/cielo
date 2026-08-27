@@ -118,9 +118,7 @@ export async function fetchWeather(
     atmosphere,
     phase,
     temperature:
-      typeof data.current?.temperature_2m === "number"
-        ? Math.round(data.current.temperature_2m)
-        : null,
+      typeof data.current?.temperature_2m === "number" ? data.current.temperature_2m : null,
     timezone: data.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
     sunrise: parseLocal(data.daily?.sunrise?.[0]),
     sunset: parseLocal(data.daily?.sunset?.[0]),

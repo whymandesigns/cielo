@@ -13,7 +13,7 @@
       rel="stylesheet"
     />
   </head>
-  <body data-sky="sunny" data-phase="day" data-hour="h23">
+  <body data-sky="sunny" data-phase="day" data-hour="h23" data-sky-bar="off">
     <div class="atmosphere" aria-hidden="true">
       <div class="mesh"></div>
       <div class="sun"></div>
@@ -61,25 +61,38 @@
       </div>
     </main>
 
-    <button
-      type="button"
-      class="settings-toggle"
-      aria-haspopup="dialog"
-      aria-controls="settings"
-      aria-expanded="false"
-      title="Settings"
-    >
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-          d="M4 8h16M4 16h16M8 5v6M16 13v6"
-        />
-      </svg>
-      <span class="sr-only">Settings</span>
-    </button>
+    <div class="dock">
+      <button
+        type="button"
+        class="settings-toggle"
+        aria-haspopup="dialog"
+        aria-controls="settings"
+        aria-expanded="false"
+        title="Settings"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            d="M4 8h16M4 16h16M8 5v6M16 13v6"
+          />
+        </svg>
+        <span class="sr-only">Settings</span>
+      </button>
+
+      <nav class="preview sky-picks" aria-label="Sky faces" hidden>
+        <button type="button" data-preview="live" class="is-active">Live</button>
+        <button type="button" data-preview="sunrise">Dawn</button>
+        <button type="button" data-preview="sunset">Dusk</button>
+        <button type="button" data-preview="sunny">Clear</button>
+        <button type="button" data-preview="cloudy">Cloud</button>
+        <button type="button" data-preview="rainy">Rain</button>
+        <span class="sky-split" aria-hidden="true"></span>
+        <button type="button" data-night>Night</button>
+      </nav>
+    </div>
 
     <div class="settings-scrim" data-settings-dismiss hidden></div>
     <div
@@ -90,41 +103,51 @@
       aria-labelledby="settings-title"
       hidden
     >
-      <header class="settings-head">
-        <h2 id="settings-title">Settings</h2>
-        <button type="button" class="settings-close" data-settings-close aria-label="Close settings">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              fill="currentColor"
-              d="M18.3 5.7a1 1 0 0 0-1.4 0L12 10.58 7.1 5.7a1 1 0 0 0-1.4 1.42L10.58 12 5.7 16.9a1 1 0 1 0 1.42 1.4L12 13.42l4.9 4.88a1 1 0 0 0 1.4-1.42L13.42 12l4.88-4.9a1 1 0 0 0 0-1.4Z"
-            />
-          </svg>
-        </button>
-      </header>
+      <div class="settings-card">
+        <header class="settings-head">
+          <h2 id="settings-title">Settings</h2>
+          <button type="button" class="settings-close" data-settings-close aria-label="Close settings">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M18.3 5.7a1 1 0 0 0-1.4 0L12 10.58 7.1 5.7a1 1 0 0 0-1.4 1.42L10.58 12 5.7 16.9a1 1 0 1 0 1.42 1.4L12 13.42l4.9 4.88a1 1 0 0 0 1.4-1.42L13.42 12l4.88-4.9a1 1 0 0 0 0-1.4Z"
+              />
+            </svg>
+          </button>
+        </header>
 
-      <section class="settings-block">
-        <h3>Time format</h3>
-        <div class="t-tabs" role="tablist" aria-label="Time format">
-          <span class="t-tabs-pill" aria-hidden="true"></span>
-          <button type="button" class="t-tab" role="tab" data-hour="h23" aria-selected="true">24-hour</button>
-          <button type="button" class="t-tab" role="tab" data-hour="h12" aria-selected="false">12-hour</button>
-        </div>
-      </section>
+        <section class="settings-block">
+          <h3>Time format</h3>
+          <div class="t-tabs" data-tabs="hour" role="tablist" aria-label="Time format">
+            <span class="t-tabs-pill" aria-hidden="true"></span>
+            <button type="button" class="t-tab" role="tab" data-hour="h23" aria-selected="true">24-hour</button>
+            <button type="button" class="t-tab" role="tab" data-hour="h12" aria-selected="false">12-hour</button>
+          </div>
+        </section>
 
-      <section class="settings-block">
-        <h3>Sky</h3>
-        <p class="settings-hint">Live follows your location. The others are previews.</p>
-        <div class="sky-picks" aria-label="Sky faces">
-          <button type="button" data-preview="live" class="is-active">Live</button>
-          <button type="button" data-preview="sunrise">Dawn</button>
-          <button type="button" data-preview="sunset">Dusk</button>
-          <button type="button" data-preview="sunny">Clear</button>
-          <button type="button" data-preview="cloudy">Cloud</button>
-          <button type="button" data-preview="rainy">Rain</button>
-          <span class="sky-split" aria-hidden="true"></span>
-          <button type="button" data-night>Night</button>
-        </div>
-      </section>
+        <section class="settings-block">
+          <h3>Temperature</h3>
+          <div class="t-tabs" data-tabs="temp" role="tablist" aria-label="Temperature">
+            <span class="t-tabs-pill" aria-hidden="true"></span>
+            <button type="button" class="t-tab" role="tab" data-temp-unit="c" aria-selected="true">Celsius</button>
+            <button type="button" class="t-tab" role="tab" data-temp-unit="f" aria-selected="false">Fahrenheit</button>
+          </div>
+        </section>
+
+        <section class="settings-block">
+          <div class="settings-switch-row">
+            <div>
+              <h3>Preview mode</h3>
+              <p class="settings-hint">Simulate weather conditions.</p>
+            </div>
+            <label class="sky-switch">
+              <input type="checkbox" data-preview-mode />
+              <span class="sky-switch-knob" aria-hidden="true"></span>
+              <span class="sr-only">Preview mode</span>
+            </label>
+          </div>
+        </section>
+      </div>
     </div>
 
     <script type="module" src="/src/main.ts"></script>

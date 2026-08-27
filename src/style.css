@@ -31,10 +31,18 @@
   --modal-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --tabs-dur: 250ms;
   --tabs-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --tabs-text-muted: color-mix(in srgb, var(--sky-ink) 62%, transparent);
-  --tabs-text-active: var(--sky-ink);
-  --tabs-bar-bg: color-mix(in srgb, var(--sky-ink) 10%, transparent);
-  --tabs-pill-bg: color-mix(in srgb, var(--sky-ink) 16%, #fff 55%);
+  --tabs-text-muted: rgba(243, 240, 232, 0.72);
+  --tabs-text-active: #16181c;
+  --tabs-bar-bg: rgba(8, 10, 14, 0.52);
+  --tabs-pill-bg: #f3f0e8;
+  --float-dur: 420ms;
+  --float-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  --float-x: 0px;
+  --float-y: 0px;
+  --glare-x: 50%;
+  --glare-y: 18%;
 }
 
 *,
@@ -440,11 +448,21 @@ body[data-phase="night"] .lens {
   border: 0;
 }
 
-.settings-toggle {
+.dock {
   position: fixed;
   z-index: 2;
   left: 50%;
   bottom: 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: calc(100% - 1.2rem);
+  transform: translateX(-50%);
+}
+
+.settings-toggle {
+  position: relative;
+  flex: 0 0 auto;
   width: 2.7rem;
   height: 2.7rem;
   display: grid;
@@ -454,11 +472,10 @@ body[data-phase="night"] .lens {
   border-radius: 999px;
   background: color-mix(in srgb, var(--sky-ink) 10%, transparent);
   color: inherit;
-  transform: translateX(-50%);
   backdrop-filter: blur(16px);
   cursor: pointer;
   opacity: 0.72;
-  transition: opacity 200ms ease, background 200ms ease, transform 200ms ease;
+  transition: opacity 200ms ease, background 200ms ease;
 }
 
 .settings-toggle svg {
@@ -506,13 +523,11 @@ body[data-phase="night"] .lens {
   left: 50%;
   bottom: 5.1rem;
   width: min(calc(100% - 1.6rem), 26.5rem);
-  padding: 1.15rem 1.2rem 1.25rem;
-  border-radius: 1.35rem;
-  border: 1px solid color-mix(in srgb, var(--sky-ink) 16%, transparent);
-  background: color-mix(in srgb, var(--sky-horizon) 28%, color-mix(in srgb, var(--sky-ink) 18%, #0b1520 55%));
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--sky-ink);
-  box-shadow: 0 24px 60px color-mix(in srgb, #000 32%, transparent);
-  backdrop-filter: blur(28px);
+  perspective: 920px;
   transform-origin: center;
   transform: translateX(-50%) scale(var(--modal-scale));
   opacity: 0;
@@ -536,6 +551,49 @@ body[data-phase="night"] .lens {
   transition:
     transform var(--modal-close-dur) var(--modal-ease),
     opacity var(--modal-close-dur) var(--modal-ease);
+}
+
+.settings-card {
+  position: relative;
+  isolation: isolate;
+  padding: 1.15rem 1.2rem 1.25rem;
+  border-radius: 1.35rem;
+  border: 1px solid color-mix(in srgb, var(--sky-ink) 16%, transparent);
+  background: color-mix(in srgb, var(--sky-horizon) 28%, color-mix(in srgb, var(--sky-ink) 18%, #0b1520 55%));
+  box-shadow:
+    0 24px 60px color-mix(in srgb, #000 32%, transparent),
+    0 10px 24px color-mix(in srgb, #000 16%, transparent);
+  backdrop-filter: blur(28px);
+  transform-origin: center;
+  transform:
+    translate3d(var(--float-x), var(--float-y), 18px)
+    rotateX(var(--tilt-x))
+    rotateY(var(--tilt-y));
+  transition:
+    transform var(--float-dur) var(--float-ease),
+    box-shadow var(--float-dur) var(--float-ease);
+  will-change: transform;
+}
+
+.settings-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 90% at var(--glare-x) var(--glare-y),
+    color-mix(in srgb, #fff 34%, transparent),
+    transparent 46%
+  );
+  mix-blend-mode: normal;
+  opacity: 0.28;
+}
+
+.settings-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .settings-head {
@@ -604,8 +662,74 @@ body[data-phase="night"] .lens {
   opacity: 0.62;
 }
 
+.settings-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.settings-switch-row h3 {
+  margin: 0 0 0.28rem;
+}
+
+.settings-switch-row .settings-hint {
+  margin: 0;
+  max-width: 16rem;
+}
+
+.sky-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 2.75rem;
+  height: 1.58rem;
+  padding: 0.16rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--sky-ink) 16%, transparent);
+  background: color-mix(in srgb, var(--sky-ink) 10%, transparent);
+  cursor: pointer;
+}
+
+.sky-switch input {
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.sky-switch-knob {
+  display: block;
+  width: 1.22rem;
+  height: 1.22rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--sky-ink) 55%, #fff);
+  box-shadow: 0 1px 4px color-mix(in srgb, #000 22%, transparent);
+  transform: translateX(0);
+  pointer-events: none;
+  transition:
+    transform var(--tabs-dur) var(--tabs-ease),
+    background var(--tabs-dur) var(--tabs-ease);
+}
+
+.sky-switch:has(input:checked) {
+  background: color-mix(in srgb, var(--sky-ink) 26%, #fff 42%);
+}
+
+.sky-switch:has(input:checked) .sky-switch-knob {
+  transform: translateX(1.17rem);
+  background: var(--sky-ink);
+}
+
+.sky-switch:focus-within {
+  outline: 2px solid var(--sky-ink);
+  outline-offset: 3px;
+}
+
 .t-tabs {
   position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
   width: 100%;
@@ -613,6 +737,8 @@ body[data-phase="night"] .lens {
   padding: 3px;
   border-radius: 48px;
   background: var(--tabs-bar-bg);
+  mix-blend-mode: normal;
+  transform: translateZ(0);
 }
 
 .t-tab {
@@ -624,19 +750,31 @@ body[data-phase="night"] .lens {
   height: 34px;
   padding: 4px 12px;
   color: var(--tabs-text-muted);
+  -webkit-text-fill-color: var(--tabs-text-muted);
   cursor: pointer;
   border-radius: 48px;
-  z-index: 1;
+  z-index: 2;
   font: inherit;
   font-size: 0.68rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  transition: color var(--tabs-dur) var(--tabs-ease);
+  mix-blend-mode: normal;
+  transform: translateZ(1px);
+  transition:
+    color var(--tabs-dur) var(--tabs-ease),
+    background-color var(--tabs-dur) var(--tabs-ease);
 }
 
-.t-tab:not([aria-selected="true"]):hover,
+.t-tab:not([aria-selected="true"]):hover {
+  color: #f3f0e8;
+  -webkit-text-fill-color: #f3f0e8;
+}
+
 .t-tab[aria-selected="true"] {
   color: var(--tabs-text-active);
+  -webkit-text-fill-color: var(--tabs-text-active);
+  background: var(--tabs-pill-bg);
+  font-weight: 500;
 }
 
 .t-tabs-pill {
@@ -647,6 +785,7 @@ body[data-phase="night"] .lens {
   width: 0;
   background: var(--tabs-pill-bg);
   border-radius: 48px;
+  box-shadow: 0 1px 2px color-mix(in srgb, #000 16%, transparent);
   transform: translateX(0);
   transition:
     transform var(--tabs-dur) var(--tabs-ease),
@@ -663,6 +802,33 @@ body[data-phase="night"] .lens {
   padding: 0.28rem;
   border-radius: 1.05rem;
   background: color-mix(in srgb, var(--sky-ink) 8%, transparent);
+}
+
+.preview {
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sky-ink) 10%, transparent);
+  backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, var(--sky-ink) 14%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px) scale(0.98);
+  transform-origin: left center;
+  transition:
+    opacity 280ms var(--modal-ease),
+    transform 280ms var(--modal-ease);
+}
+
+.preview[hidden] {
+  display: none !important;
+}
+
+.preview.is-shown {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
 }
 
 .sky-picks button {
@@ -826,6 +992,18 @@ body[data-phase="night"] .lens {
     width: min(calc(100% - 1.2rem), 26.5rem);
   }
 
+  .dock {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .preview {
+    flex-wrap: wrap;
+    justify-content: center;
+    border-radius: 1.35rem;
+    transform-origin: center;
+  }
+
   .sky-picks {
     justify-content: center;
   }
@@ -854,7 +1032,10 @@ body[data-phase="night"] .lens {
   .t-modal,
   .t-tabs-pill,
   .t-tab,
-  .settings-scrim {
+  .settings-scrim,
+  .settings-card,
+  .preview,
+  .sky-switch-knob {
     transition: none !important;
   }
 

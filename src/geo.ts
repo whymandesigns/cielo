@@ -2,6 +2,7 @@ export interface GeoFix {
   latitude: number;
   longitude: number;
   label: string;
+  countryCode?: string;
 }
 
 interface GeoJs {
@@ -10,6 +11,7 @@ interface GeoJs {
   city?: string;
   region?: string;
   country?: string;
+  country_code?: string;
 }
 
 interface ReverseGeo {
@@ -17,13 +19,17 @@ interface ReverseGeo {
   locality?: string;
   principalSubdivision?: string;
   countryName?: string;
+  countryCode?: string;
 }
 
 function formatLabel(city?: string, country?: string): string {
   return [city, country].filter(Boolean).join(" : ");
 }
 
-async function reverseGeocode(latitude: number, longitude: number): Promise<string> {
+async function reverseGeocode(
+  latitude: number,
+  longitude: number,
+): Promise<{ label: string; countryCode?: string }> {
   try {
     const url = new URL("https://api.bigdatacloud.net/data/reverse-geocode-client");
     url.searchParams.set("latitude", String(latitude));
@@ -32,12 +38,14 @@ async function reverseGeocode(latitude: number, longitude: number): Promise<stri
     const response = await fetch(url);
     if (!response.ok) throw new Error("reverse geocode failed");
     const data = (await response.json()) as ReverseGeo;
-    return (
-      formatLabel(data.city || data.locality, data.countryName) ||
-      `${latitude.toFixed(2)}°, ${longitude.toFixed(2)}°`
-    );
+    return {
+      label:
+        formatLabel(data.city || data.locality, data.countryName) ||
+        `${latitude.toFixed(2)}°, ${longitude.toFixed(2)}°`,
+      countryCode: data.countryCode,
+    };
   } catch {
-    return `${latitude.toFixed(2)}°, ${longitude.toFixed(2)}°`;
+    return { label: `${latitude.toFixed(2)}°, ${longitude.toFixed(2)}°` };
   }
 }
 
@@ -68,6 +76,7 @@ async function locateByIp(): Promise<GeoFix> {
     latitude,
     longitude,
     label: formatLabel(data.city, data.country) || "Your sky",
+    countryCode: data.country_code,
   };
 }
 
@@ -75,8 +84,8 @@ export async function locate(): Promise<GeoFix> {
   try {
     const position = await readBrowserLocation();
     const { latitude, longitude } = position.coords;
-    const label = await reverseGeocode(latitude, longitude);
-    return { latitude, longitude, label };
+    const place = await reverseGeocode(latitude, longitude);
+    return { latitude, longitude, label: place.label, countryCode: place.countryCode };
   } catch {
     return locateByIp();
   }

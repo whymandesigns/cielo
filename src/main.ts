@@ -1,6 +1,7 @@
 import "./style.css";
 import { initRain, setRainEnabled, setRainNight, syncRainSky } from "./rain";
 import { getHourCycle, setClockTimezone, setHourCycle, startClock, type HourCycle } from "./clock";
+import { formatTemperature, getTempUnit, inferTempUnit, setTempUnit, type TempUnit } from "./temp";
 import { locate } from "./geo";
 import {
   applyPalette,
@@ -29,6 +30,7 @@ let currentPalette: SkyPalette = paletteFor("sunny", "day");
 let animating = false;
 let weather: WeatherReading | null = null;
 let clockStarted = false;
+let syncTempTabs: ((animate: boolean) => void) | undefined;
 
 function swapText(el: HTMLElement | null, next: string): void {
   if (!el || el.textContent === next) return;
@@ -105,12 +107,7 @@ function renderSkyCopy(): void {
         ? "Night cloud"
         : SKY_LABELS[state.kind];
   swapText(label, labelText);
-  if (temp) {
-    temp.textContent =
-      weather?.temperature === null || weather?.temperature === undefined
-        ? "—"
-        : `${weather.temperature}°`;
-  }
+  if (temp) temp.textContent = formatTemperature(weather?.temperature);
 }
 
 function setSky(next: SkyState): void {
@@ -156,6 +153,8 @@ async function refreshWeather(): Promise<void> {
   try {
     const geo = await locate();
     swapText(placeEl, geo.label);
+    inferTempUnit(geo.countryCode);
+    syncTempTabs?.(false);
     weather = await fetchWeather(geo.latitude, geo.longitude);
     ensureClock(weather.timezone);
     setLive({ kind: weather.kind, phase: weather.phase });
@@ -178,39 +177,108 @@ function bindSettings(): void {
   const toggle = document.querySelector<HTMLButtonElement>(".settings-toggle");
   const modal = document.querySelector<HTMLElement>("#settings");
   const scrim = document.querySelector<HTMLElement>(".settings-scrim");
+  const card = modal?.querySelector<HTMLElement>(".settings-card");
   const closeBtn = document.querySelector<HTMLButtonElement>("[data-settings-close]");
   const dismiss = document.querySelector("[data-settings-dismiss]");
-  const bar = document.querySelector<HTMLElement>(".t-tabs");
-  const pill = bar?.querySelector<HTMLElement>(".t-tabs-pill");
-  const tabs = [...(bar?.querySelectorAll<HTMLButtonElement>(".t-tab") ?? [])];
+  const hourBar = document.querySelector<HTMLElement>('[data-tabs="hour"]');
+  const tempBar = document.querySelector<HTMLElement>('[data-tabs="temp"]');
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const finePointer = window.matchMedia("(pointer: fine)");
   let open = false;
   let closing = false;
+  let pointerX = 0;
+  let pointerY = 0;
+  let floatFrame = 0;
 
-  const movePill = (tab: HTMLElement, animate: boolean) => {
-    if (!pill) return;
-    if (!animate) {
-      const prev = pill.style.transition;
-      pill.style.transition = "none";
-      pill.style.transform = `translateX(${tab.offsetLeft}px)`;
-      pill.style.width = `${tab.offsetWidth}px`;
-      void pill.offsetWidth;
-      pill.style.transition = prev;
+  const resetFloat = () => {
+    if (!card) return;
+    card.style.setProperty("--tilt-x", "0deg");
+    card.style.setProperty("--tilt-y", "0deg");
+    card.style.setProperty("--float-x", "0px");
+    card.style.setProperty("--float-y", "0px");
+    card.style.setProperty("--glare-x", "50%");
+    card.style.setProperty("--glare-y", "18%");
+  };
+
+  const applyFloat = () => {
+    floatFrame = 0;
+    if (!card || !open || reduceMotion.matches || !finePointer.matches) {
+      resetFloat();
       return;
     }
-    pill.style.transform = `translateX(${tab.offsetLeft}px)`;
-    pill.style.width = `${tab.offsetWidth}px`;
+    const rect = modal.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const nx = Math.max(-1, Math.min(1, (pointerX - (rect.left + rect.width / 2)) / (rect.width * 0.9)));
+    const ny = Math.max(-1, Math.min(1, (pointerY - (rect.top + rect.height / 2)) / (rect.height * 1.15)));
+    card.style.setProperty("--tilt-x", `${(ny * 8).toFixed(2)}deg`);
+    card.style.setProperty("--tilt-y", `${(-nx * 10).toFixed(2)}deg`);
+    card.style.setProperty("--float-x", `${(nx * 18).toFixed(2)}px`);
+    card.style.setProperty("--float-y", `${(ny * 14).toFixed(2)}px`);
+    card.style.setProperty("--glare-x", `${(50 + nx * 38).toFixed(1)}%`);
+    card.style.setProperty("--glare-y", `${Math.max(0, Math.min(100, 28 + ny * 42)).toFixed(1)}%`);
   };
 
-  const activeTab = () =>
-    tabs.find((tab) => tab.getAttribute("aria-selected") === "true") ?? tabs[0];
+  const onPointerMove = (event: PointerEvent) => {
+    pointerX = event.clientX;
+    pointerY = event.clientY;
+    if (!floatFrame) floatFrame = requestAnimationFrame(applyFloat);
+  };
 
-  const syncHourTabs = (cycle: HourCycle, animate: boolean) => {
+  const bindTabGroup = (
+    bar: HTMLElement | null,
+    isActive: (tab: HTMLButtonElement) => boolean,
+    onPick: (tab: HTMLButtonElement) => void,
+  ): ((animate: boolean) => void) => {
+    const pill = bar?.querySelector<HTMLElement>(".t-tabs-pill");
+    const tabs = [...(bar?.querySelectorAll<HTMLButtonElement>(".t-tab") ?? [])];
+
+    const movePill = (tab: HTMLElement, animate: boolean) => {
+      if (!pill) return;
+      if (!animate) {
+        const prev = pill.style.transition;
+        pill.style.transition = "none";
+        pill.style.transform = `translateX(${tab.offsetLeft}px)`;
+        pill.style.width = `${tab.offsetWidth}px`;
+        void pill.offsetWidth;
+        pill.style.transition = prev;
+        return;
+      }
+      pill.style.transform = `translateX(${tab.offsetLeft}px)`;
+      pill.style.width = `${tab.offsetWidth}px`;
+    };
+
+    const sync = (animate: boolean) => {
+      for (const tab of tabs) {
+        tab.setAttribute("aria-selected", isActive(tab) ? "true" : "false");
+      }
+      const selected = tabs.find((tab) => tab.getAttribute("aria-selected") === "true") ?? tabs[0];
+      if (selected) movePill(selected, animate);
+    };
+
     for (const tab of tabs) {
-      tab.setAttribute("aria-selected", tab.dataset.hour === cycle ? "true" : "false");
+      tab.addEventListener("click", () => {
+        onPick(tab);
+        sync(true);
+      });
     }
-    const selected = activeTab();
-    if (selected) movePill(selected, animate);
+
+    return sync;
   };
+
+  const syncHourTabs = bindTabGroup(
+    hourBar,
+    (tab) => tab.dataset.hour === getHourCycle(),
+    (tab) => setHourCycle((tab.dataset.hour as HourCycle) ?? "h23"),
+  );
+
+  syncTempTabs = bindTabGroup(
+    tempBar,
+    (tab) => tab.dataset.tempUnit === getTempUnit(),
+    (tab) => {
+      setTempUnit((tab.dataset.tempUnit as TempUnit) ?? "c");
+      renderSkyCopy();
+    },
+  );
 
   const setOpen = (next: boolean) => {
     if (!toggle || !modal || !scrim) return;
@@ -222,15 +290,21 @@ function bindSettings(): void {
       scrim.hidden = false;
       modal.classList.remove("is-closing");
       scrim.classList.remove("is-closing");
+      window.addEventListener("pointermove", onPointerMove);
       requestAnimationFrame(() => {
         modal.classList.add("is-open");
         scrim.classList.add("is-open");
-        syncHourTabs(getHourCycle(), false);
+        syncHourTabs(false);
+        syncTempTabs?.(false);
         closeBtn?.focus();
       });
       return;
     }
     closing = true;
+    window.removeEventListener("pointermove", onPointerMove);
+    if (floatFrame) cancelAnimationFrame(floatFrame);
+    floatFrame = 0;
+    resetFloat();
     modal.classList.remove("is-open");
     scrim.classList.remove("is-open");
     modal.classList.add("is-closing");
@@ -252,39 +326,81 @@ function bindSettings(): void {
     if (event.key === "Escape" && open) setOpen(false);
   });
 
-  for (const tab of tabs) {
-    tab.addEventListener("click", () => {
-      const cycle = (tab.dataset.hour as HourCycle) ?? "h23";
-      setHourCycle(cycle);
-      syncHourTabs(cycle, true);
-    });
-  }
-
   window.addEventListener("resize", () => {
     if (open) {
-      const selected = activeTab();
-      if (selected) movePill(selected, false);
+      syncHourTabs(false);
+      syncTempTabs?.(false);
     }
   });
 
-  syncHourTabs(getHourCycle(), false);
+  syncHourTabs(false);
+  syncTempTabs?.(false);
 }
 
 function bindPreview(): void {
+  const SKY_BAR_KEY = "cielo-sky-bar";
+  const bar = document.querySelector<HTMLElement>(".preview");
+  const switchBtn = document.querySelector<HTMLInputElement>("[data-preview-mode]");
   const buttons = document.querySelectorAll<HTMLButtonElement>("[data-preview]");
   const nightButton = document.querySelector<HTMLButtonElement>("[data-night]");
+  let hideTimer = 0;
+
+  if (switchBtn?.dataset.bound === "1") {
+    return;
+  }
+  if (switchBtn) switchBtn.dataset.bound = "1";
 
   const syncNightButton = () => {
     nightButton?.classList.toggle("is-active", forceNight);
+  };
+
+  const syncPreviewButtons = () => {
+    for (const button of buttons) {
+      button.classList.toggle("is-active", button.dataset.preview === preview);
+    }
+    syncNightButton();
+  };
+
+  const setBarVisible = (on: boolean, instant = false) => {
+    localStorage.setItem(SKY_BAR_KEY, on ? "1" : "0");
+    if (switchBtn) switchBtn.checked = on;
+    document.body.dataset.skyBar = on ? "on" : "off";
+    if (!bar) return;
+    if (hideTimer) {
+      window.clearTimeout(hideTimer);
+      hideTimer = 0;
+    }
+    if (on) {
+      bar.hidden = false;
+      if (instant) {
+        bar.classList.add("is-shown");
+      } else {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => bar.classList.add("is-shown"));
+        });
+      }
+    } else {
+      bar.classList.remove("is-shown");
+      const hide = () => {
+        hideTimer = 0;
+        if (document.body.dataset.skyBar !== "on") bar.hidden = true;
+      };
+      if (instant) hide();
+      else hideTimer = window.setTimeout(hide, 280);
+      if (preview !== "live" || forceNight) {
+        preview = "live";
+        forceNight = false;
+        syncPreviewButtons();
+        setSky(visibleState());
+      }
+    }
   };
 
   for (const button of buttons) {
     button.addEventListener("click", () => {
       const value = button.dataset.preview as SkyKind | "live";
       preview = value;
-      for (const other of buttons) {
-        other.classList.toggle("is-active", other === button);
-      }
+      syncPreviewButtons();
       setSky(visibleState());
     });
   }
@@ -295,7 +411,12 @@ function bindPreview(): void {
     setSky(visibleState());
   });
 
-  syncNightButton();
+  switchBtn?.addEventListener("change", () => {
+    setBarVisible(switchBtn.checked);
+  });
+
+  setBarVisible(localStorage.getItem(SKY_BAR_KEY) === "1", true);
+  syncPreviewButtons();
 }
 
 applyPalette(currentPalette);
