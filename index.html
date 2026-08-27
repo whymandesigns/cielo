@@ -64,7 +64,7 @@
     <div class="dock">
       <button
         type="button"
-        class="settings-toggle"
+        class="dock-btn settings-toggle"
         aria-haspopup="dialog"
         aria-controls="settings"
         aria-expanded="false"
@@ -80,6 +80,61 @@
           />
         </svg>
         <span class="sr-only">Settings</span>
+      </button>
+
+      <button
+        type="button"
+        class="dock-btn mood-toggle"
+        data-mood-toggle
+        aria-pressed="false"
+        title="Play soundscape"
+      >
+        <span class="t-icon-swap" data-state="a">
+          <svg class="t-icon" data-icon="a" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4.8 9.2h2.4L11 6.2v11.6L7.2 14.8H4.8A1.2 1.2 0 0 1 3.6 13.6v-2.4A1.2 1.2 0 0 1 4.8 10z"
+            />
+            <path
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              d="m15.2 9.4 5.2 5.2M20.4 9.4l-5.2 5.2"
+            />
+          </svg>
+          <svg class="t-icon" data-icon="b" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4.8 9.2h2.4L11 6.2v11.6L7.2 14.8H4.8A1.2 1.2 0 0 1 3.6 13.6v-2.4A1.2 1.2 0 0 1 4.8 10z"
+            />
+            <path
+              class="mood-wave"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              d="M14.6 9.1c1.1 1.1 1.1 4.7 0 5.8"
+            />
+            <path
+              class="mood-wave mood-wave--far"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              d="M17.4 7c2.2 2.1 2.2 7.9 0 10"
+            />
+          </svg>
+        </span>
+        <span class="sr-only">Play soundscape</span>
       </button>
 
       <nav class="preview sky-picks" aria-label="Sky faces" hidden>

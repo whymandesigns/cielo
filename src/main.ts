@@ -13,6 +13,7 @@ import {
   type SkyPalette,
 } from "./sky";
 import { fetchWeather, type WeatherReading } from "./weather";
+import { bindMood, setMoodSky } from "./mood";
 
 const TRANSITION_MS = 1800;
 const WEATHER_MS = 10 * 60 * 1000;
@@ -50,6 +51,7 @@ function applySkyAttrs(state: SkyState): void {
   document.body.dataset.phase = state.phase;
   setRainEnabled(state.kind === "rainy");
   setRainNight(state.phase === "night");
+  setMoodSky(state.kind, state.phase);
 }
 
 function tweenTo(next: SkyState): void {
@@ -423,6 +425,7 @@ applyPalette(currentPalette);
 initRain(document.querySelector(".rain") as HTMLCanvasElement);
 applySkyAttrs(shown);
 bindSettings();
+bindMood();
 bindPreview();
 ensureClock(Intl.DateTimeFormat().resolvedOptions().timeZone);
 renderSkyCopy();

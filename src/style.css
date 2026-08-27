@@ -43,6 +43,10 @@
   --float-y: 0px;
   --glare-x: 50%;
   --glare-y: 18%;
+  --icon-swap-dur: 250ms;
+  --icon-swap-blur: 2px;
+  --icon-swap-start-scale: 0.25;
+  --icon-swap-ease: ease-in-out;
 }
 
 *,
@@ -460,6 +464,7 @@ body[data-phase="night"] .lens {
   transform: translateX(-50%);
 }
 
+.dock-btn,
 .settings-toggle {
   position: relative;
   flex: 0 0 auto;
@@ -478,11 +483,15 @@ body[data-phase="night"] .lens {
   transition: opacity 200ms ease, background 200ms ease;
 }
 
+.dock-btn svg,
 .settings-toggle svg {
   width: 1.05rem;
   height: 1.05rem;
 }
 
+.dock-btn:hover,
+.dock-btn:focus-visible,
+.mood-toggle[aria-pressed="true"],
 .settings-toggle:hover,
 .settings-toggle:focus-visible,
 .settings-toggle[aria-expanded="true"] {
@@ -490,9 +499,61 @@ body[data-phase="night"] .lens {
   background: color-mix(in srgb, var(--sky-ink) 16%, transparent);
 }
 
+.dock-btn:focus-visible,
 .settings-toggle:focus-visible {
   outline: 2px solid var(--sky-ink);
   outline-offset: 3px;
+}
+
+.t-icon-swap {
+  position: relative;
+  display: inline-grid;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.t-icon-swap .t-icon {
+  grid-area: 1 / 1;
+  width: 1.05rem;
+  height: 1.05rem;
+  transition:
+    opacity var(--icon-swap-dur) var(--icon-swap-ease),
+    filter var(--icon-swap-dur) var(--icon-swap-ease),
+    transform var(--icon-swap-dur) var(--icon-swap-ease);
+  will-change: opacity, filter, transform;
+}
+
+.t-icon-swap[data-state="a"] .t-icon[data-icon="a"],
+.t-icon-swap[data-state="b"] .t-icon[data-icon="b"] {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+
+.t-icon-swap[data-state="a"] .t-icon[data-icon="b"],
+.t-icon-swap[data-state="b"] .t-icon[data-icon="a"] {
+  opacity: 0;
+  filter: blur(var(--icon-swap-blur));
+  transform: scale(var(--icon-swap-start-scale));
+}
+
+.mood-wave {
+  transform-origin: 11px 12px;
+  animation: mood-wave 2.8s ease-in-out infinite;
+}
+
+.mood-wave--far {
+  animation-delay: 0.35s;
+}
+
+@keyframes mood-wave {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .settings-scrim {
@@ -1035,8 +1096,13 @@ body[data-phase="night"] .lens {
   .settings-scrim,
   .settings-card,
   .preview,
-  .sky-switch-knob {
+  .sky-switch-knob,
+  .t-icon-swap .t-icon {
     transition: none !important;
+  }
+
+  .mood-wave {
+    animation: none;
   }
 
   .t-stagger-line {
