@@ -206,7 +206,7 @@ function bindSettings(): void {
       resetFloat();
       return;
     }
-    const rect = modal.getBoundingClientRect();
+    const rect = card.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
     const nx = Math.max(-1, Math.min(1, (pointerX - (rect.left + rect.width / 2)) / (rect.width * 0.9)));
     const ny = Math.max(-1, Math.min(1, (pointerY - (rect.top + rect.height / 2)) / (rect.height * 1.15)));
